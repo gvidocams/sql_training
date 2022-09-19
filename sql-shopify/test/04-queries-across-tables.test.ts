@@ -9,7 +9,8 @@ describe("Queries Across Tables", () => {
     }, minutes(1));
 
     it("should select count of apps which have free pricing plan", async done => {
-        const query = `todo`;
+        const query = `SELECT COUNT(*) as count FROM apps_pricing_plans
+        WHERE pricing_plan_id IN ('1', '13')`;
         const result = await db.selectSingleRow(query);
         expect(result).toEqual({
             count: 1112
@@ -18,7 +19,14 @@ describe("Queries Across Tables", () => {
     }, minutes(1));
 
     it("should select top 3 most common categories", async done => {
-        const query = `todo`;
+            const query = `SELECT 
+                COUNT(*) AS count, 
+                categories.title AS category 
+            FROM 
+                apps_categories
+            JOIN categories ON categories.id = apps_categories.category_id
+            GROUP BY category_id
+            LIMIT 3`;
         const result = await db.selectMultipleRows(query);
         expect(result).toEqual([
             { count: 1193, category: "Store design" },
@@ -29,7 +37,18 @@ describe("Queries Across Tables", () => {
     }, minutes(1));
 
     it("should select top 3 prices by appearance in apps and in price range from $5 to $10 inclusive (not matters monthly or one time payment)", async done => {
-        const query = `todo`;
+        const query = `
+        SELECT 
+            COUNT(*) as count, 
+            pricing_plans.price, 
+            CAST(SUBSTRING(pricing_plans.price, 2) AS real) AS casted_price 
+        FROM 
+            apps_pricing_plans
+        JOIN pricing_plans ON pricing_plans.id = apps_pricing_plans.pricing_plan_id 
+        WHERE casted_price >= 5 AND casted_price <= 10
+        GROUP BY casted_price
+        ORDER BY count DESC
+        LIMIT 3`;
         const result = await db.selectMultipleRows(query);
         expect(result).toEqual([
             { count: 225, price: "$9.99/month", casted_price: 9.99 },
